@@ -1,0 +1,68 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters: 
+  UserInformationTableName: 
+    Type: String
+    Description: User information table name DynamoDB
+  AddressInformationTableName: 
+    Type: String
+    Description: Address information table name DynamoDB
+    
+Resources: 
+  UserTable: 
+    Type: AWS::DynamoDB::Table
+    Properties: 
+      AttributeDefinitions: 
+        - AttributeName: "UserID"
+          AttributeType: "S"
+        - AttributeName: "UserName"
+          AttributeType: "S"
+
+      KeySchema: 
+        - AttributeName: "UserID"
+          KeyType: "HASH"
+        - AttributeName: "UserName"
+          KeyType: "RANGE"
+      ProvisionedThroughput: 
+        ReadCapacityUnits: "5"
+        WriteCapacityUnits: "5"
+      TableName: !Ref UserInformationTableName
+    
+  AddressTable: 
+    Type: AWS::DynamoDB::Table
+    Properties: 
+      AttributeDefinitions: 
+        - AttributeName: "AddressID"
+          AttributeType: "S"
+        - AttributeName: "UserID"
+          AttributeType: "S"
+
+      KeySchema: 
+        - AttributeName: "AddressID"
+          KeyType: "HASH"
+        - AttributeName: "UserID"
+          KeyType: "RANGE"
+      ProvisionedThroughput: 
+        ReadCapacityUnits: "5"
+        WriteCapacityUnits: "5"
+      TableName: !Ref AddressInformationTableName
+      
+  AddressTable1: 
+    Type: AWS::DynamoDB::Table
+    Properties: 
+      AttributeDefinitions: 
+        - AttributeName: "AddressID"
+          AttributeType: "S"
+        - AttributeName: "UserID"
+          AttributeType: "S"
+
+      KeySchema: 
+        - AttributeName: "AddressID"
+          KeyType: "HASH"
+        - AttributeName: "UserID"
+          KeyType: "RANGE"
+      ProvisionedThroughput: 
+        ReadCapacityUnits: "5"
+        WriteCapacityUnits: "5"
+      TableName: abc
+      
