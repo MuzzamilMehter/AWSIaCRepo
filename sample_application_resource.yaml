@@ -4,7 +4,7 @@ Parameters:
   UserInformationTableName: 
     Type: String
     Description: User information table name DynamoDB
-  AddressInformationTableName: 
+  DuplicateInformationTableName: 
     Type: String
     Description: Address information table name DynamoDB
     
@@ -28,41 +28,92 @@ Resources:
         WriteCapacityUnits: "5"
       TableName: !Ref UserInformationTableName
     
-  AddressTable: 
+  DuplicateUserTable: 
     Type: AWS::DynamoDB::Table
     Properties: 
       AttributeDefinitions: 
-        - AttributeName: "AddressID"
-          AttributeType: "S"
         - AttributeName: "UserID"
+          AttributeType: "S"
+        - AttributeName: "UserName"
           AttributeType: "S"
 
       KeySchema: 
-        - AttributeName: "AddressID"
-          KeyType: "HASH"
         - AttributeName: "UserID"
+          KeyType: "HASH"
+        - AttributeName: "UserName"
           KeyType: "RANGE"
       ProvisionedThroughput: 
         ReadCapacityUnits: "5"
         WriteCapacityUnits: "5"
-      TableName: !Ref AddressInformationTableName
+      TableName: !Ref DuplicateInformationTableName
       
-  AddressTable1: 
-    Type: AWS::DynamoDB::Table
-    Properties: 
-      AttributeDefinitions: 
-        - AttributeName: "AddressID"
-          AttributeType: "S"
-        - AttributeName: "UserID"
-          AttributeType: "S"
+  primer:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: python3.7
+      Role: !Sub
+              - arn:aws:iam::${account}:role/iac_child_role
+              - {account: !Ref "AWS::AccountId"}
 
-      KeySchema: 
-        - AttributeName: "AddressID"
-          KeyType: "HASH"
-        - AttributeName: "UserID"
-          KeyType: "RANGE"
-      ProvisionedThroughput: 
-        ReadCapacityUnits: "5"
-        WriteCapacityUnits: "5"
-      TableName: abc
+      FunctionName: CopyTableFunction
+      Handler: index.lambda_handler
+      Code:
+        ZipFile: |
+            import json
+            import boto3
+
+
+            class DuplicateTable():
+                def __init__(self, event):
+                    try:
+                        self.event = event
+                        self.orginal_table = self.event['orginal_table']
+                        self.duplicate_table = self.event['duplicate_table']
+                        self.UserID = self.event['UserID']
+                        self.UserName = self.event['UserName']
+                        # self.duplicate_table()
+                    except Exception as e:
+                        raise e 
+                        
+                def put_duplicate_table(self):
+                    try:
+                        client = boto3.client('dynamodb')
+                        print ("Call Table")
+                        response = client.get_item(
+                            TableName=self.orginal_table,
+                            Key={
+                                'UserID': {'S': self.UserID},
+                                'UserName': {'S': self.UserName}
+                            }
+                        )
+                        
+                        print (response)
+                        response = client.put_item(
+                            TableName=self.duplicate_table,
+                            Item=response['Item'])
+                        print (response)
+                        print ("After Table")
+                    except Exception as e:
+                        print (str(e))
+
+            def lambda_handler(event, context):
+                # TODO implement
+                try:
+                    duplicate = DuplicateTable(event)
+                    duplicate.put_duplicate_table()
+                    
+                    return {
+                        'statusCode': 200,
+                        'body': 'success'
+                    }
+                except Exception as e:
+                    return {
+                        'statusCode': 200,
+                        'body': str(e)
+                    }
+    
+
+      Description: Lambda Function to copy the table contents.
+
+
       

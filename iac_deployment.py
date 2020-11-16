@@ -3,6 +3,7 @@ import boto3
 import boto3.session
 import random
 
+# Class to deploy the IaC in AWS
 class IaC_Deployment():
     def __init__(self, event, context):
         self.event = event
@@ -15,10 +16,11 @@ class IaC_Deployment():
         self.bucketname = ""
         self.iac_key = ""
         
+		# Get Stack Name
         if "IaC_Name" in self.event:
             self.stack_name = self.event["IaC_Name"]
             
-    
+		# Get Region Name
         if "region_name" in self.event.keys():
             print (self.event["region_name"])
             region_name = self.event["region_name"]
@@ -34,6 +36,9 @@ class IaC_Deployment():
         
         my_session = boto3.session.Session()
         self.client_s3 = my_session.client('s3')
+		
+		
+		# Assume Role from Master account to child account to deploy the teplate if the account number of the IaC platform and Child account is different.
         if  "Account_Number" in self.event and self.event["Account_Number"] != self.account_id:
             print ("Change Account ARN")
             self.session_client = boto3.session.Session()
@@ -69,7 +74,7 @@ class IaC_Deployment():
             my_session = boto3.session.Session(region_name = region_name) 
             self.client_cloudformation = my_session.client('cloudformation')
         
-        
+    # Get the cloudformation template form S3
     def get_iac_template(self):
         try:
             response = self.client_s3.get_object(
@@ -82,7 +87,8 @@ class IaC_Deployment():
         except Exception as e:
             print (str(e))
             return False, Str(e)
-            
+    
+	# Update the IaC cloudformation template
     def update_cloudformation(self,content):
         try:
             response = self.client_cloudformation.update_stack(
@@ -100,7 +106,7 @@ class IaC_Deployment():
                         'Value': 'yes'
                     },
                 ],
-                RoleARN="arn:aws:iam::"+self.account_id+":role/IaC_role"
+                RoleARN="arn:aws:iam::"+self.account_id+":role/iac_child_role"
             )
             return "Infrastructure As Code Deployment Updation is initiated."
                 
@@ -108,6 +114,7 @@ class IaC_Deployment():
             print (str(e))
             return str(e)
 
+	# Deploy the IaC cloudformation template
     def deploy_cloudformation(self):
         try:
             status, stacks_list_response = self.list_cloudformation_stacks()
@@ -132,7 +139,7 @@ class IaC_Deployment():
                                     'Value': 'yes'
                                 },
                             ],
-                            RoleARN="arn:aws:iam::"+self.account_id+":role/IaC_role"
+                            RoleARN="arn:aws:iam::"+self.account_id+":role/iac_child_role"
                         )
                         return "Infrastructure As Code Deployment Creation is initiated."
                     else:
@@ -149,6 +156,7 @@ class IaC_Deployment():
             print (str(e))
             return str(e)
             
+	# Check if the CFT Stack exists already.
     def list_cloudformation_stacks(self):
         print ("List Stacks")
         try:
@@ -193,7 +201,7 @@ class IaC_Deployment():
             print (str(e))
             return False, str(e)
             
-            
+#Lambda Function will initiate from here.
 def lambda_handler(event, context):
     # TODO implement
     try:
