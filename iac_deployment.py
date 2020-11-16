@@ -73,6 +73,8 @@ class IaC_Deployment():
             print (self.account_id)
             my_session = boto3.session.Session(region_name = region_name) 
             self.client_cloudformation = my_session.client('cloudformation')
+            
+        self.region_name = region_name
         
     # Get the cloudformation template form S3
     def get_iac_template(self):
@@ -108,7 +110,7 @@ class IaC_Deployment():
                 ],
                 RoleARN="arn:aws:iam::"+self.account_id+":role/iac_child_role"
             )
-            return "Infrastructure As Code Deployment Updation is initiated."
+            return "Infrastructure As Code Deployment Updation is initiated, In the AWS Account "+ str(self.account_id) +" in the Region "+self.region_name
                 
         except Exception as e:
             print (str(e))
@@ -141,7 +143,7 @@ class IaC_Deployment():
                             ],
                             RoleARN="arn:aws:iam::"+self.account_id+":role/iac_child_role"
                         )
-                        return "Infrastructure As Code Deployment Creation is initiated."
+                        return "Infrastructure As Code Deployment Creation is initiated, In the AWS Account "+ str(self.account_id) +" in the Region "+self.region_name
                     else:
                         # Update Stack
                         print ("Update Stack")
@@ -208,9 +210,10 @@ def lambda_handler(event, context):
         
         iac_development = IaC_Deployment(event, context)
         response = iac_development.deploy_cloudformation()
+        print (response)
         return {
             'statusCode': 200,
-            'body': json.dumps(response)
+            'body': response
         }
     except Exception as e:
         return {

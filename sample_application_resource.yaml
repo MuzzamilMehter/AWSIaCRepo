@@ -113,7 +113,7 @@ Resources:
                     }
     
 
-      Description: Lambda Function to copy the table contents.
+      Description: Lambda Function to copy the table contents into another table.
 
 
       
